@@ -21,7 +21,7 @@ yarn-error.log*
 .eslintcache
 
 # dotenv environment variables file(s)
-/config.env
+/*.env
 .env
 .env.*
 
