@@ -11,6 +11,8 @@ const tourSchema = new mongoose.Schema(
       type: String,
       unique: true,
       required: [true, 'A tour must have a name'],
+      minlength: [10, 'A name must have more than or equal to 10 characters'],
+      maxlength: [40, 'A name must have less than or equal to 40 characters'],
     },
     // Defining slug for document middleware as properties not in schema cannot be added
     slug: String,
@@ -25,10 +27,16 @@ const tourSchema = new mongoose.Schema(
     difficulty: {
       type: String,
       required: [true, 'A tour must have difficulty'],
+      enum: {
+        values: ['easy', 'medium', 'difficult'],
+        message: 'Difficulty must be either easy , medum or difficult',
+      },
     },
     ratingsAverage: {
       type: Number,
       default: 4.5,
+      min: 1,
+      max: 5,
     },
     ratingsQuantity: {
       type: Number,
@@ -37,6 +45,17 @@ const tourSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: [true, 'A tour must have a price'],
+    },
+    priceDiscount: {
+      type: Number,
+      validate: {
+        validator: function (val) {
+          // validators with the this keyword point to the current document only while creating a NEW document and not while updating.
+          return val < this.price;
+        },
+        // VALUE contains the same value, the user entered while creation of the document.
+        message: 'The price discount ({VALUE}) cannot be greater than price ()',
+      },
     },
     summary: {
       type: String,
