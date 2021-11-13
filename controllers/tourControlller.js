@@ -119,10 +119,10 @@ exports.getTourStats = async (req, res) => {
           minPrice: { $min: '$price' },
         },
       },
-      {
-        // Match can be done multiple times
-        $match: { _id: { $ne: 'EASY' } },
-      },
+      // {
+      //   // Match can be done multiple times
+      //   $match: { _id: { $ne: 'EASY' } },
+      // },
     ]);
 
     res.status(200).json({

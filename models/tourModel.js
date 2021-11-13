@@ -98,6 +98,15 @@ tourSchema.post(/^find/, function (docs, next) {
   next();
 });
 
+// Aggregation Middleware
+// to remove secret tours from stats and monthly plan calculations.
+tourSchema.pre('aggregate', function (next) {
+  // this.pipeline() is the current pipeline array , we add a stage in the beginning to our requirements
+  // shift -> adds to the end, unshift -> adds to the start. (In array)
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+  next();
+});
+
 const Tour = mongoose.model('Tour', tourSchema);
 
 module.exports = Tour;
