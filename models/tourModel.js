@@ -59,6 +59,10 @@ const tourSchema = new mongoose.Schema(
       type: [Date],
       required: [true, 'A tour must have start dates'],
     },
+    secretTour: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -75,6 +79,22 @@ tourSchema.virtual('durationWeeks').get(function () {
 // Document middleware : runs before .save() and .create()
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+// Query Middleware
+// This middleware is used to hide some special tours from the users
+// Using a regex to match all the types of find methods.
+// tourSchema.pre('find', function (next) {
+tourSchema.pre(/^find/, function (next) {
+  this.find({ secretTour: { $ne: true } }); // using $ne as all tours do not have that property.
+  this.start = Date.now();
+  next();
+});
+
+// The order of arguments matter hence docs is to be listed even when not used.
+tourSchema.post(/^find/, function (docs, next) {
+  console.log(`Query took ${Date.now() - this.start} milliseconds`);
   next();
 });
 
