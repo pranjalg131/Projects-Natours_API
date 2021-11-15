@@ -1,3 +1,11 @@
+const AppError = require('../utils/appError');
+
+const handleCastErrorDB = (err) => {
+  const message = `Invalid ${err.path} : ${err.value}`;
+  return new AppError(message, 404);
+};
+
+/* This file has all the functions related to error handling */
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
     status: err.status,
@@ -27,13 +35,21 @@ const sendErrorProd = (err, res) => {
 };
 
 module.exports = (err, req, res, next) => {
-  err.status = err.status || 'error';
   err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === 'production') {
-    sendErrorProd(err, res);
+    // Classic destructuring trick to make an object's copy.
+    // This backfires as the name property is in the proto of the err and not on itself
+    // Hence use Object.create() to mitigate the issue.
+    // https://github.com/jonasschmedtmann/complete-node-bootcamp/issues/55
+    let error = Object.create(err);
+
+    // Functions to transform mongoose errors into meaningful ones.
+    if (err.name === 'CastError') error = handleCastErrorDB(error);
+    sendErrorProd(error, res);
   }
 
   next();
