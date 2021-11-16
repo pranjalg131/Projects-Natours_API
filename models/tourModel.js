@@ -29,7 +29,7 @@ const tourSchema = new mongoose.Schema(
       required: [true, 'A tour must have difficulty'],
       enum: {
         values: ['easy', 'medium', 'difficult'],
-        message: 'Difficulty must be either easy , medum or difficult',
+        message: 'Difficulty must be either easy, medium or difficult',
       },
     },
     ratingsAverage: {
@@ -54,7 +54,7 @@ const tourSchema = new mongoose.Schema(
           return val < this.price;
         },
         // VALUE contains the same value, the user entered while creation of the document.
-        message: 'The price discount ({VALUE}) cannot be greater than price ()',
+        message: 'The price discount ({VALUE}) cannot be greater than price',
       },
     },
     summary: {

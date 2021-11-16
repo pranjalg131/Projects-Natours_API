@@ -5,6 +5,17 @@ const handleCastErrorDB = (err) => {
   return new AppError(message, 404);
 };
 
+const handleDuplicateFieldsDB = (err) => {
+  const value = err.errmsg.match(/(["'])(?:\\.|[^\\])*?\1/)[0];
+  const message = `Duplicate field value: ${value}, Please use another value!`;
+  return new AppError(message, 400);
+};
+
+const handleValidationErrorDB = (err) => {
+  const errors = Object.values(err.errors).map((el) => el.message);
+  const message = `Invalid Input Data. ${errors.join('. ')}`;
+  return new AppError(message, 400);
+};
 /* This file has all the functions related to error handling */
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -49,6 +60,9 @@ module.exports = (err, req, res, next) => {
 
     // Functions to transform mongoose errors into meaningful ones.
     if (err.name === 'CastError') error = handleCastErrorDB(error);
+    if (err.code === 11000) error = handleDuplicateFieldsDB(error);
+    if (err.name === `ValidationError`) error = handleValidationErrorDB(error);
+
     sendErrorProd(error, res);
   }
 
