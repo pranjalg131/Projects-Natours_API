@@ -2,6 +2,14 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: './config.env' });
 
+// This is included here , as to start listening for events before excuting any code.
+process.on('uncaughtException', (err) => {
+  console.log(err.name, err.message);
+  console.log('Uncaught Exception, Shutting down...');
+  // Here we quit as this lands node process into critical state, which can be recovered after restarting.
+  process.exit(1); // 0 -> no errors , 1 -> Unhandled Rejections.
+});
+
 const mongoose = require('mongoose');
 const app = require('./app');
 
