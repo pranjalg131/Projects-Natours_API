@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide a password'],
     minlength: 8,
+    select: false,
   },
   confirmPassword: {
     type: String,
@@ -33,6 +34,7 @@ const userSchema = new mongoose.Schema({
       message: 'Passwords do not match!',
     },
   },
+  passwordChangedAt: Date,
 });
 
 // Using a pre-save middleware to hash the passwords.
@@ -49,6 +51,27 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// This is called an instance method.
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  correctPassword
+) {
+  return await bcrypt.compare(candidatePassword, correctPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+
+    // If JWT is issued before passwordChange , then return true.
+    // The one issued earlier is smaller as less time has passed from 1970 to that event.
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

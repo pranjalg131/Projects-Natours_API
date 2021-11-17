@@ -1,6 +1,13 @@
+const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
+
+const signToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
 
 exports.signup = catchAsync(async (req, res, next) => {
   // This is wrong as anyone could decide the roles for themselves
@@ -12,11 +19,10 @@ exports.signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     confirmPassword: req.body.confirmPassword,
+    passwordChangedAt: req.body.passwordChangedAt,
   });
 
-  const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
+  const token = signToken(newUser._id);
 
   res.status(201).json({
     status: 'success',
@@ -25,4 +31,77 @@ exports.signup = catchAsync(async (req, res, next) => {
       newUser,
     },
   });
+});
+
+exports.login = catchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // 1) Check if the username and password are provided.
+  if (!email || !password) {
+    // Sending error -> calling next with argument to invoke the global error handling middleware.
+    // return - to avoid sending two responses we terminate the function here itself.
+    return next(new AppError('Please provide email and password', 400));
+  }
+  // 2) Check if the user exists and password is correct.
+  const user = await User.findOne({ email }).select('+password');
+
+  // The second condition can be evaluated when user exists.
+  if (!user || !(await user.correctPassword(password, user.password))) {
+    return next(new AppError('Incorrect email or password', 401));
+  }
+
+  // 3) If everytihng is okay, send the token.
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
+
+// Very important to mark functions in catchAsync as async otherwise catch isn't available on them.
+exports.isAuthorized = catchAsync(async (req, res, next) => {
+  let token;
+
+  // 1) Get the token from the request and check if it's there
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next(
+      new AppError('You are not logged in , Please log in to continue'),
+      401
+    );
+  }
+
+  // 2) Token verification
+  // We convert the callback form of JWT function into async await style, so first we promisify the function.
+  // Then the function is called with the necessary arguments.
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // If the code reaches here that means the token was issued by us.
+  // 3) Check if the user still exits
+  const freshUser = await User.findById(decoded.id);
+
+  if (!freshUser) {
+    return next(
+      new AppError('User belonging to this token does not exist', 401)
+    );
+  }
+
+  // 4) Check if the user has changed passwords since the token was issued.
+  if (freshUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError('User recently changed password, Please login again')
+    );
+  }
+
+  // If the code has made this far means the credentials are authentic.
+  // Making the user data available for the subsequent protected middlewares.
+  req.user = freshUser;
+
+  next();
 });
