@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const sendEmail = require('../utils/email');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -117,3 +118,54 @@ exports.isAuthorized =
     }
     next();
   };
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get the user based on the POSTed email.
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user)
+    return next(new AppError('No user found with the email specified', 404));
+
+  // 2) Generate the unique reset token.
+  const resetToken = user.createPasswordResetToken();
+  // Inside the createPasswordResetToken() , the document was modified but till now has not been saved.
+  // Now while saving the validators (like the confirm password one ) run again, so disable them.
+  await user.save({ validateBeforeSave: false });
+  // 3) Send it back via email.
+  const resetUrl = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/users/resetPassword/${resetToken}`;
+
+  const message = `Forgot your password , submit a PATCH request with your password and confirmPassword to: ${resetUrl}. \n If you did not initiate this request please ignore this email`;
+
+  try {
+    // since when try fails we have to do multiple things , hence a simple wrapper would not suffice
+    // hence using try catch.
+    await sendEmail({
+      email,
+      subject: 'Your reset password link (valid for 10 mins)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Email sent successfully',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiresIn = undefined;
+    // Again the document is modified here , but not saved.
+    await user.save({ validateBeforeSave: false });
+
+    // After undoing all the changes , we can report an error.
+    return next(
+      new AppError(
+        'There was an error while sending the email, Please try again later!',
+        500 // server Error
+      )
+    );
+  }
+});
+
+exports.resetPassword = (req, res, next) => {};
