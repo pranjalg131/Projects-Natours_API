@@ -20,6 +20,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     confirmPassword: req.body.confirmPassword,
     passwordChangedAt: req.body.passwordChangedAt,
+    role: req.body.role,
   });
 
   const token = signToken(newUser._id);
@@ -59,7 +60,7 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 // Very important to mark functions in catchAsync as async otherwise catch isn't available on them.
-exports.isAuthorized = catchAsync(async (req, res, next) => {
+exports.isAuthenticated = catchAsync(async (req, res, next) => {
   let token;
 
   // 1) Get the token from the request and check if it's there
@@ -102,6 +103,17 @@ exports.isAuthorized = catchAsync(async (req, res, next) => {
   // If the code has made this far means the credentials are authentic.
   // Making the user data available for the subsequent protected middlewares.
   req.user = freshUser;
-
+  // GRANT ACCESS TO THE PROTECTED ROUTE
   next();
 });
+
+exports.isAuthorized =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You are not authorized to perform this action', 403)
+      );
+    }
+    next();
+  };
