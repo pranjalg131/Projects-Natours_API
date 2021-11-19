@@ -59,6 +59,19 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+userSchema.pre('save', function (next) {
+  // If the password has not been changed or the document is just created.
+  // We do not want to do anything.
+  if (!this.isModified('password') || this.isNew) return next();
+
+  // Sometimes the saving of password in database takes longer and the JWT is sent before.
+  // This leads to passwordChangedAt being set to after the token has been generated, which makes the token invalid.
+  // To fix this we add a bit of buffer in the timestamp (push it backwards in time) to make it appear that token is generated after the password is changed.
+
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
 // This is called an instance method.
 userSchema.methods.correctPassword = async function (
   candidatePassword,
@@ -96,7 +109,6 @@ userSchema.methods.createPasswordResetToken = function () {
   // Token has an expiration time of 10 mins
   this.passwordResetExpiresIn = Date.now() + 10 * 60 * 1000;
 
-  console.log({ resetToken }, this.passwordResetExpiresIn);
   // Return the unhashed token to be sent via email.
   return resetToken;
 };

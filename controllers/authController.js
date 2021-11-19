@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
@@ -142,6 +143,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   try {
     // since when try fails we have to do multiple things , hence a simple wrapper would not suffice
     // hence using try catch.
+    // Be careful of the property names, they caused a real nightmare with me.
     await sendEmail({
       email,
       subject: 'Your reset password link (valid for 10 mins)',
@@ -168,4 +170,47 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.resetPassword = (req, res, next) => {};
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // Extract the necessary details.
+  const { password, confirmPassword } = req.body;
+
+  // The token in the argument is unencrypted, but we have stored the encrypted one.
+  const hasshedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  // 1) Get user based on token.
+  const user = await User.findOne({
+    passwordResetToken: hasshedToken,
+    // Simple rule for timestamps , the one which is ahead is in future.
+    passwordResetExpiresIn: { $gt: Date.now() },
+  });
+
+  // 2) If token not expired and their is a user , set the new password.
+  if (!user) {
+    return next(new AppError('The token is invalid or has expired!', 400));
+  }
+
+  user.password = password;
+  user.confirmPassword = confirmPassword;
+  // Resetting these settings for future use.
+  user.passwordResetToken = undefined;
+  user.passwordResetExpiresIn = undefined;
+
+  // Again the document was only modified till this point and not saved.
+  await user.save(); // No custom options as this time we need the validators to run the checks.
+
+  // 3) Update changePasswordAt property for the user.
+  // This will be done as a part of the model, as we want it to happen automatically.
+  // And also following the thin controller , fat model paradigm.
+
+  // 4) Log the user in, and send the JWT.
+
+  const token = signToken(user.id);
+
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
