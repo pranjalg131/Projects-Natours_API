@@ -11,6 +11,17 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   // This is wrong as anyone could decide the roles for themselves
   // const newUser = await User.create(req.body);
@@ -21,19 +32,11 @@ exports.signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     confirmPassword: req.body.confirmPassword,
-    passwordChangedAt: req.body.passwordChangedAt,
+    passwordChangedAt: req.body.passwordChangedAt, // Only there for testing purposes.
     role: req.body.role,
   });
 
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      newUser,
-    },
-  });
+  createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -54,11 +57,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3) If everytihng is okay, send the token.
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createSendToken(user, 200, res);
 });
 
 // Very important to mark functions in catchAsync as async otherwise catch isn't available on them.
@@ -206,11 +205,25 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   // And also following the thin controller , fat model paradigm.
 
   // 4) Log the user in, and send the JWT.
+  createSendToken(user, 200, res);
+});
 
-  const token = signToken(user.id);
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // This is for logged in users
 
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  // 1) Get the user from collection.
+  // Since we need the password , we select it explicitly.
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 2) Check the POSTed password is correct.
+  if (!(await user.correctPassword(req.body.currentPassword, user.password))) {
+    return next(new AppError('Your current password is wrong!', 401));
+  }
+  // 3) If so , update the password
+  user.password = req.body.newPassword;
+  user.confirmPassword = req.body.confirmNewPassword;
+  await user.save();
+
+  // 4) Then log the user back in by sending another token.
+  createSendToken(user, 200, res);
 });
