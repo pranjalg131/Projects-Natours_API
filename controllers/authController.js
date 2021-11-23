@@ -209,7 +209,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  // This is for logged in users
+  // This is for logged in users, hence user information is available on req.user
 
   // 1) Get the user from collection.
   // Since we need the password , we select it explicitly.
@@ -222,6 +222,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   // 3) If so , update the password
   user.password = req.body.newPassword;
   user.confirmPassword = req.body.confirmNewPassword;
+  // We do not disable validators as we want them to check the new password against our contraints.
   await user.save();
 
   // 4) Then log the user back in by sending another token.

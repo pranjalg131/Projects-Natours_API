@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
       message: 'Passwords do not match!',
     },
   },
+  active: {
+    type: Boolean,
+    default: true,
+    // Hiding this from the end user.
+    select: false,
+  },
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpiresIn: Date,
@@ -69,6 +75,13 @@ userSchema.pre('save', function (next) {
   // To fix this we add a bit of buffer in the timestamp (push it backwards in time) to make it appear that token is generated after the password is changed.
 
   this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
+// Query Middleware to prevent quering inactive users
+userSchema.pre(/^find/, function (next) {
+  // this points to the current query object.
+  this.find({ active: { $ne: false } });
   next();
 });
 
