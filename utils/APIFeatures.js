@@ -12,10 +12,7 @@ class APIFeatures {
 
     // Advanced Filtering
     let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(
-      '/\b(lte|lt|gte|gt)\b/g',
-      (match) => `$${match}`
-    );
+    queryStr = queryStr.replace(/\b(lte|lt|gte|gt)\b/g, (match) => `$${match}`);
 
     this.query = this.query.find(JSON.parse(queryStr));
     return this;
