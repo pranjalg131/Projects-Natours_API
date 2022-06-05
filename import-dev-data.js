@@ -13,10 +13,8 @@ const DB = process.env.DATABASE.replace(
 mongoose.connect(DB).then(() => console.log('DB connection successful!'));
 
 const tours = JSON.parse(
-  fs.readFileSync(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    'utf-8',
-    (err) => console.log(err)
+  fs.readFileSync(`${__dirname}/dev-data/data/tours.json`, 'utf-8', (err) =>
+    console.log(err)
   )
 );
 

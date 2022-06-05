@@ -137,7 +137,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     'host'
   )}/api/v1/users/resetPassword/${resetToken}`;
 
-  const message = `Forgot your password , submit a PATCH request with your password and confirmPassword to: ${resetUrl}. \n If you did not initiate this request please ignore this email`;
+  const message = `Forgot your password , submit a PATCH request with your password and confirmPassword to: ${resetUrl}\n If you did not initiate this request please ignore this email`;
 
   try {
     // since when try fails we have to do multiple things , hence a simple wrapper would not suffice

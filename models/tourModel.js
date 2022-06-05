@@ -82,6 +82,31 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      // GeoJSON
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        // GeoJSON
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
   },
   {
     toJSON: { virtuals: true },
@@ -89,7 +114,7 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
-// Virtual Properties - They define bussiness logic which can be derived from other properties in the database
+// Virtual Properties - They define bushiness logic which can be derived from other properties in the database
 // These only show up in the requests and are defined over here to make the controllers thin.
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
