@@ -32,6 +32,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         400
       )
     );
+
+  if (req.body.role)
+    return next(
+      new AppError(
+        'This route is not for role updating , please contact admin'
+      ),
+      400
+    );
   // 2) Update the user data.
   const filteredData = filter(req.body, 'name', 'email');
   /*
@@ -60,27 +68,28 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.addUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not defined yet!',
+exports.getUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id);
+
+  res.status(200).json({
+    status: 'success',
+    data: user,
   });
-};
-exports.getUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not defined yet!',
+});
+
+exports.changeRole = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const filteredData = filter(req.body, 'role');
+
+  const user = await User.findByIdAndUpdate(id, filteredData, {
+    new: true,
+    runValidators: true,
   });
-};
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not defined yet!',
+
+  res.status(200).json({
+    status: 'success',
+    data: user,
   });
-};
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not defined yet!',
-  });
-};
+});

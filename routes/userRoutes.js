@@ -27,14 +27,16 @@ userRouter.delete(
   userController.deleteMe
 );
 
+userRouter.route('/').get(userController.getAllUsers);
+
 userRouter
-  .route('/')
-  .get(userController.getAllUsers)
-  .post(userController.addUser);
-userRouter
-  .route('/:id')
-  .get(userController.getUser)
-  .patch(userController.updateUser)
-  .delete(userController.deleteUser);
+  .route('/:id/changeRole')
+  .patch(
+    authController.isAuthenticated,
+    authController.isAuthorized('admin'),
+    userController.changeRole
+  );
+
+userRouter.route('/:id').get(userController.getUser);
 
 module.exports = userRouter;
