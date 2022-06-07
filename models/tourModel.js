@@ -107,6 +107,12 @@ const tourSchema = new mongoose.Schema(
         day: Number,
       },
     ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     toJSON: { virtuals: true },
@@ -126,13 +132,34 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+// Pre save middleware to fetch all users corresponding to guides in the tour document.
+// This embeds the users into the tour document, not a good solution for updating as,when user changes corresponding tours will also have to change.
+
+// tourSchema.pre('save', async function (next) {
+//   // This returns an array of promises, so await them to assign them to the final array.
+//   const userPromises = this.guides.map(async (id) => await User.findById(id));
+//   this.guides = await Promise.all(userPromises);
+
+//   next();
+// });
+
 // Query Middleware
 // This middleware is used to hide some special tours from the users
 // Using a regex to match all the types of find methods.
 // tourSchema.pre('find', function (next) {
+
 tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } }); // using $ne as all tours do not have that property.
   this.start = Date.now();
+  next();
+});
+
+// This fetches the references in the tours document , which point to the users who are listed as guides in the document
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
   next();
 });
 
