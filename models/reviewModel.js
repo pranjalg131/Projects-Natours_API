@@ -38,11 +38,8 @@ reviewSchema.pre(/^find/, function (next) {
   this.populate({
     path: 'user',
     select: 'name photo',
-  }).populate({
-    path: 'tour',
-    select: 'name',
   });
-
+  // Do not fetch the tour again , as it leads to chain of populates, which is not ideal in this case.
   next();
 });
 
