@@ -7,6 +7,9 @@ A Tour Booking System for the company Natours
 - Frontend - Template Engine (Pug)
 - Database - MongoDB
 - Backend - Express.js
+- Deployment - Heroku ([link](https://ancient-escarpment-86941.herokuapp.com/))
+- Documentation - Postman
+  ([link](https://documenter.getpostman.com/view/17251187/UzBgvVCK))
 
 ### Environment Variables for server 💻
 

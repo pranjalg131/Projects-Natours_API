@@ -14,6 +14,13 @@ app.use(express.json());
 
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
+app.all('/', (req, res, next) =>
+  res.status(200).json({
+    status: 200,
+    available_routes: ['/api/v1/tours', '/api/v1/users', '/api/v1/reviews'],
+  })
+);
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
