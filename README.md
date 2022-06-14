@@ -4,7 +4,6 @@ A Tour Booking System for the company Natours
 
 ## Tech Used ✅
 
-- Frontend - Template Engine (Pug)
 - Database - MongoDB
 - Backend - Express.js
 - Deployment - Heroku ([link](https://ancient-escarpment-86941.herokuapp.com/))
