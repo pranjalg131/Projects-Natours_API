@@ -95,4 +95,6 @@ exports.changeRole = catchAsync(async (req, res, next) => {
   });
 });
 
+// No password Updates with this route as the save middleware does not work
+exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);

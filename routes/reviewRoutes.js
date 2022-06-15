@@ -10,6 +10,9 @@ reviewRouter
   .get(isAuthenticated, reviewController.getAllReviews)
   .post(isAuthenticated, reviewController.createReview);
 
-reviewRouter.route('/:id').delete(reviewController.deleteReview);
+reviewRouter
+  .route('/:id')
+  .patch(reviewController.updateReview)
+  .delete(reviewController.deleteReview);
 
 module.exports = reviewRouter;
