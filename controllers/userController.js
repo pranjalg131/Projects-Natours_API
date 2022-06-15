@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const User = require('../models/userModel');
+const factory = require('./handlerFactory');
 const AppError = require('../utils/appError');
 
 const filter = (obj, ...fields) => {
@@ -93,3 +94,5 @@ exports.changeRole = catchAsync(async (req, res, next) => {
     data: user,
   });
 });
+
+exports.deleteUser = factory.deleteOne(User);

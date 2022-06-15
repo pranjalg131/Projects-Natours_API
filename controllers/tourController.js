@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const factory = require('./handlerFactory');
 const APIFeatures = require('../utils/APIFeatures');
 const AppError = require('../utils/appError');
 
@@ -75,20 +76,7 @@ exports.updateTour = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const tour = await Tour.findByIdAndDelete(id);
-
-  // Adding custom 404 errors
-  if (!tour) {
-    return next(new AppError("Can't find tour with that ID", 404));
-  }
-
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
-});
+exports.deleteTour = factory.deleteOne(Tour);
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
@@ -107,7 +95,7 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
       },
     },
     // {
-    //   // Match can be done multiple times
+    //   Match can be done multiple times
     //   $match: { _id: { $ne: 'EASY' } },
     // },
   ]);

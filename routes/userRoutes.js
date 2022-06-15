@@ -37,6 +37,9 @@ userRouter
     userController.changeRole
   );
 
-userRouter.route('/:id').get(userController.getUser);
+userRouter
+  .route('/:id')
+  .get(userController.getUser)
+  .delete(userController.deleteUser);
 
 module.exports = userRouter;
