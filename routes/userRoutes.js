@@ -27,7 +27,13 @@ userRouter.delete(
   userController.deleteMe
 );
 
-userRouter.route('/').get(userController.getAllUsers);
+userRouter
+  .route('/')
+  .get(
+    authController.isAuthenticated,
+    authController.isAuthorized('admin'),
+    userController.getAllUsers
+  );
 
 userRouter
   .route('/:id/changeRole')
